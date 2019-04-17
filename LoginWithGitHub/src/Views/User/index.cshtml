@@ -1,0 +1,17 @@
+﻿@model FP.OAuth.LoginWithGitHub.Business.GitHubUser
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>User-Info</title>
+</head>
+<body>
+    GitHub-Benutzer <br />
+    ID: @Model.id <br />
+    Login: @Model.login <br />
+    Name: @Model.name
+</body>
+</html>
