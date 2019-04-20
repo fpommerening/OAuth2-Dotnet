@@ -17,25 +17,28 @@ namespace FP.OAuth.LoginWithGitHub.Controllers
         private readonly IConfiguration _configuration;
         private readonly IProxyRepository _repository;
 
+        private readonly Guid _localId;
+
         public AuthController(IConfiguration configuration, IProxyRepository repository)
         {
             _configuration = configuration;
             _repository = repository;
+
+            var cfg = _configuration.Get<AppConfig>();
+            _localId = !string.IsNullOrEmpty(cfg.LocalId) ? Guid.Parse(cfg.LocalId) : _repository.LocalId;
         }
 
         [HttpGet("~/login")]
         public IActionResult Login()
         {
             var cfg = _configuration.Get<AppConfig>();
-            var state = $"{_repository.LocalId:N}#{Guid.NewGuid():N}";
-            if (!string.IsNullOrEmpty(cfg.LocalId))
-            {
-                state = $"{Guid.Parse(cfg.LocalId):N}#{Guid.NewGuid():N}";
-            }
-            
+            var state = $"{_localId:N}#{Guid.NewGuid():N}";
+
             var queryParam = new Dictionary<string, string>
             {
-                ["client_id"] = cfg.ClientId, ["state"] = state, ["scope"] = "user"
+                ["client_id"] = cfg.ClientId,
+                ["state"] = state,
+                ["scope"] = "user"
             };
 
             var url = QueryHelpers.AddQueryString("https://github.com/login/oauth/authorize", queryParam);
@@ -51,7 +54,7 @@ namespace FP.OAuth.LoginWithGitHub.Controllers
                 return StatusCode((int) HttpStatusCode.BadRequest);
             }
             var proxyId = Guid.Parse(state.Substring(0, 32));
-            if (proxyId == _repository.LocalId)
+            if (proxyId == _localId)
             {
                 var accessToken = await GetAccessToken();
                 var userInfo = await GetGitHubUser(accessToken);
