@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using FP.OAuth.LoginWithGitHub.Business;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
@@ -12,17 +15,24 @@ namespace FP.OAuth.LoginWithGitHub.Controllers
     public class AuthController : Controller
     {
         private readonly IConfiguration _configuration;
+        private readonly IProxyRepository _repository;
 
-        public AuthController(IConfiguration configuration)
+        public AuthController(IConfiguration configuration, IProxyRepository repository)
         {
             _configuration = configuration;
+            _repository = repository;
         }
 
         [HttpGet("~/login")]
         public IActionResult Login()
         {
-            var cfg = _configuration.Get<Business.AppConfig>();
-            var state = Guid.NewGuid().ToString();
+            var cfg = _configuration.Get<AppConfig>();
+            var state = $"{_repository.LocalId:N}#{Guid.NewGuid():N}";
+            if (!string.IsNullOrEmpty(cfg.LocalId))
+            {
+                state = $"{Guid.Parse(cfg.LocalId):N}#{Guid.NewGuid():N}";
+            }
+            
             var queryParam = new Dictionary<string, string>
             {
                 ["client_id"] = cfg.ClientId, ["state"] = state, ["scope"] = "user"
@@ -35,14 +45,35 @@ namespace FP.OAuth.LoginWithGitHub.Controllers
         [HttpGet("~/api/oauth/access_token")]
         public async Task<IActionResult> AccessToken()
         {
-            var accessToken = await GetAccessToken();
-            var userInfo = await GetGitHubUser(accessToken);
-            return View("../user/index", userInfo );
+            string state = Request.Query["state"];
+            if (string.IsNullOrEmpty(state) || state.Length != 65)
+            {
+                return StatusCode((int) HttpStatusCode.BadRequest);
+            }
+            var proxyId = Guid.Parse(state.Substring(0, 32));
+            if (proxyId == _repository.LocalId)
+            {
+                var accessToken = await GetAccessToken();
+                var userInfo = await GetGitHubUser(accessToken);
+                return View("../user/index", userInfo );
+            }
+            var proxyItem = _repository.GetItems().FirstOrDefault(x => x.Id == proxyId);
+            if (proxyItem == null)
+            {
+                return StatusCode((int) HttpStatusCode.NotAcceptable);
+            }
+            var queryParam = new Dictionary<string, string>
+            {
+                ["state"] = state,
+                ["code"] = Request.Query["code"],
+            };
+            var url = QueryHelpers.AddQueryString(proxyItem.Url, queryParam);
+            return Redirect(url); 
         }
 
-        private async Task<Business.AccessToken> GetAccessToken()
+        private async Task<AccessToken> GetAccessToken()
         {
-            var cfg = _configuration.Get<Business.AppConfig>();
+            var cfg = _configuration.Get<AppConfig>();
 
             using(var client = new HttpClient())
             {
