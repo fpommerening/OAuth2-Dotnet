@@ -1,0 +1,33 @@
+﻿@model FP.OAuth.AuthorizationServer.Models.ApplicationModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Neue Application</title>
+</head>
+<body>
+Application
+<br/>
+<table style="border: 1px;">
+    <tr>
+        <td>Client-ID</td>
+        <td>@Model.ClientId</td>
+    </tr>
+    <tr>
+        <td>Client-Secret</td>
+        <td>@Model.ClientSecret</td>
+    </tr>
+    <tr>
+        <td>User</td>
+        <td>@Model.UserName</td>
+    </tr>
+    <tr>
+        <td>Password</td>
+        <td>@Model.UserPasssword</td>
+    </tr>
+</table>
+
+</body>
+</html>
