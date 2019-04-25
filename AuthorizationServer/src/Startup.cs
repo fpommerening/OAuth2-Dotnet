@@ -7,6 +7,7 @@ using FP.OAuth.AuthorizationServer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -56,6 +57,8 @@ namespace FP.OAuth.AuthorizationServer
                 options.ClaimsIdentity.UserNameClaimType = OpenIdConnectConstants.Claims.Name;
                 options.ClaimsIdentity.UserIdClaimType = OpenIdConnectConstants.Claims.Subject;
                 options.ClaimsIdentity.RoleClaimType = OpenIdConnectConstants.Claims.Role;
+
+
             });
 
             services.AddOpenIddict()
@@ -63,6 +66,7 @@ namespace FP.OAuth.AuthorizationServer
                 .AddCore(options =>
                 {
                     options.UseMongoDb();
+
                 })
 
                 .AddServer(options =>
@@ -110,6 +114,13 @@ namespace FP.OAuth.AuthorizationServer
                     };
                 });
 
+            services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = 
+                    ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.RequireHeaderSymmetry = false;
+            });
+
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -118,6 +129,7 @@ namespace FP.OAuth.AuthorizationServer
             {
                 app.UseDeveloperExceptionPage();
             }
+
 
             app.UseAuthentication();
             app.UseSession();
