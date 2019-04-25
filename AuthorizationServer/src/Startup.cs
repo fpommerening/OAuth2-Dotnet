@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Diagnostics.Contracts;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using AspNet.Security.OpenIdConnect.Primitives;
 using FP.OAuth.AuthorizationServer.Configuration;
 using FP.OAuth.AuthorizationServer.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -89,6 +89,25 @@ namespace FP.OAuth.AuthorizationServer
 
                     options.AddSigningKey(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appConfig.Jwt.SigningKey)));
 
+                });
+
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+            JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
+
+            services.AddAuthentication(o => { o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; })
+                .AddJwtBearer(options =>
+                {
+                    options.Authority = appConfig.Jwt.Authority;
+                    options.RequireHttpsMetadata = false;
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        NameClaimType = OpenIdConnectConstants.Claims.Subject,
+                        RoleClaimType = OpenIdConnectConstants.Claims.Role,
+                        ValidateIssuer = true,
+                        ValidAudiences = appConfig.Jwt.Audiences,
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appConfig.Jwt.SigningKey))
+                    };
                 });
 
         }
