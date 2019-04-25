@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using FP.OAuth.AuthorizationServer.Models;
 using Microsoft.AspNetCore.Identity;
@@ -55,7 +54,7 @@ namespace FP.OAuth.AuthorizationServer.Controllers
                     
                     OpenIddictConstants.Scopes.OfflineAccess,
                     OpenIddictConstants.Scopes.Profile,
-                    //OpenIddictConstants.Scopes.Roles
+                    OpenIddictConstants.Scopes.Roles
                 }
             };
 

@@ -9,7 +9,7 @@ namespace FP.OAuth.AuthorizationServer.Models
         public ApplicationModel()
         {
             ClientSecret = Guid.NewGuid().ToString("N");
-            UserPasssword = Guid.NewGuid().ToString("N");
+            UserPasssword = $"PW-{Guid.NewGuid().ToString("N").Substring(5, 15)}#";
         }
 
         public string ClientSecret { get; set; }
