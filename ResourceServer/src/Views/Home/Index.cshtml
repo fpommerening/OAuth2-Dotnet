@@ -1,0 +1,31 @@
+﻿@model FP.OAuth.ResourceServer.Business.Dashboard;
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Dashboard</title>
+</head>
+<body>
+<table style="border: 1px;">
+    <tr>
+        <th>User</th>
+        <th>Timestamp</th>
+        <th>Value</th>
+    </tr>
+    @{
+        foreach (var item in Model.ValueItems)
+        {
+        <tr>
+            <td>@item.UserName</td>
+            <td>@item.Timestamp</td>
+            <td>@item.Value</td>
+        </tr>
+        }
+    }
+</table>
+<br />
+<br />
+<div style="text-align: center;">Timestamp: @Model.Timestamp </div>
+</body>
+</html>
