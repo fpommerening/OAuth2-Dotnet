@@ -19,7 +19,6 @@ namespace FP.OAuth.LoginWithGitHub
         {
             services.Configure<AppConfig>(_configuration);
             services.AddMvc();
-            services.AddSingleton<IProxyRepository, ProxyRepository>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

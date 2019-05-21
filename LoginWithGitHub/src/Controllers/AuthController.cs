@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -15,17 +14,14 @@ namespace FP.OAuth.LoginWithGitHub.Controllers
     public class AuthController : Controller
     {
         private readonly IConfiguration _configuration;
-        private readonly IProxyRepository _repository;
 
         private readonly Guid _localId;
 
-        public AuthController(IConfiguration configuration, IProxyRepository repository)
+        public AuthController(IConfiguration configuration)
         {
             _configuration = configuration;
-            _repository = repository;
-
             var cfg = _configuration.Get<AppConfig>();
-            _localId = !string.IsNullOrEmpty(cfg.LocalId) ? Guid.Parse(cfg.LocalId) : _repository.LocalId;
+            _localId = !string.IsNullOrEmpty(cfg.LocalId) ? Guid.Parse(cfg.LocalId) : Guid.Empty;
         }
 
         [HttpGet("~/login")]
@@ -49,29 +45,17 @@ namespace FP.OAuth.LoginWithGitHub.Controllers
         public async Task<IActionResult> AccessToken()
         {
             string state = Request.Query["state"];
-            if (string.IsNullOrEmpty(state) || state.Length != 65)
+            if (!string.IsNullOrEmpty(state) && state.Length == 65)
             {
-                return StatusCode((int) HttpStatusCode.BadRequest);
+                var proxyId = Guid.Parse(state.Substring(0, 32));
+                if (proxyId == _localId)
+                {
+                    var accessToken = await GetAccessToken();
+                    var userInfo = await GetGitHubUser(accessToken);
+                    return View("../user/index", userInfo );
+                }
             }
-            var proxyId = Guid.Parse(state.Substring(0, 32));
-            if (proxyId == _localId)
-            {
-                var accessToken = await GetAccessToken();
-                var userInfo = await GetGitHubUser(accessToken);
-                return View("../user/index", userInfo );
-            }
-            var proxyItem = _repository.GetItems().FirstOrDefault(x => x.Id == proxyId);
-            if (proxyItem == null)
-            {
-                return StatusCode((int) HttpStatusCode.NotAcceptable);
-            }
-            var queryParam = new Dictionary<string, string>
-            {
-                ["state"] = state,
-                ["code"] = Request.Query["code"],
-            };
-            var url = QueryHelpers.AddQueryString(proxyItem.Url, queryParam);
-            return Redirect(url); 
+            return StatusCode((int) HttpStatusCode.BadRequest);
         }
 
         private async Task<AccessToken> GetAccessToken()
